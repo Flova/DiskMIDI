@@ -2,6 +2,8 @@
 const int MPU_addr=0x68;  // I2C address of the MPU-6050
 int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
 int counter = 0;
+int gyro_scale = 131;
+int acc_scale = 16384;
 
 void setup() {
    Serial.begin(9600);
@@ -14,9 +16,9 @@ void setup() {
 
 void loop() {
   get_sensor_data();
-  int value;
+  float value;
   value = sqrt(pow(AcX, 2) + pow(AcY, 2) + pow(AcZ, 2));
-  value = value - 17000;
+  //value = value/acc_scale;
   sendInt(value);
 
 }

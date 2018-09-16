@@ -17,7 +17,7 @@ def main():
         PORT = sys.argv[1]
 
     if len(sys.argv) > 2:
-        TIME = sys.argv[2]
+        TIME = int(sys.argv[2])
 
     print("Running data logger at port {}.".format(PORT))
 
@@ -32,9 +32,9 @@ def main():
             try:
                 data = parse(ser.readline())
                 if data:
-                    int_value = data
+                    int_value = data/16384.0
                     datenarray.append(int_value)
-                print(int_value)
+                    print(int_value)
             except Exception as e:
                 print ("Error while communicating with Arduino : " + str(e))
         
@@ -44,7 +44,7 @@ def main():
         plt.plot(datenarray)
         plt.xlabel('time (s)')
         plt.ylabel('Acceleration')
-        plt.title('')
+        plt.title('Record')
         plt.grid(True)
         plt.show()
 
