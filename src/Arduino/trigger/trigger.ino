@@ -1,9 +1,13 @@
 #include<Wire.h>
 const int MPU_addr=0x68;  // I2C address of the MPU-6050
 int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
-int counter = 0;
 int gyro_scale = 131;
 int acc_scale = 16384;
+int buffersize = 64;
+int buffer[64];
+int buffer_pointer;
+bool booted = false;
+float sensetivity = 6;
 
 void setup() {
    Serial.begin(9600);
@@ -12,15 +16,38 @@ void setup() {
    Wire.write(0x6B);  // PWR_MGMT_1 register
    Wire.write(0);     // set to zero (wakes up the MPU-6050)
    Wire.endTransmission(true);
+   for(int count = 0; count < buffersize; count++) {
+      get_sensor_data();
+      buffer_sensor();
+   }
 }
 
 void loop() {
   get_sensor_data();
-  float value;
-  value = sqrt(pow(AcX, 2) + pow(AcY, 2) + pow(AcZ, 2));
-  //value = value/acc_scale;
-  sendInt(value);
+  buffer_sensor();
+  int avg = 0;
+  for(int count = 1; count < buffersize; count++) {
+    avg += abs(get_buffer(-count - 1) - get_buffer(-count))/buffersize;
+  }
+  int diff = abs(get_buffer(-1) - get_buffer(0));
+  if(diff > avg * sensetivity) {
+    Serial.println("Triggered!!!!");
+  }
+  //Serial.println(float(avg)/acc_scale);
+}
 
+void buffer_sensor() {
+  buffering(sqrt(pow(AcX, 2) + pow(AcY, 2) + pow(AcZ, 2)));
+}
+
+void buffering(int value) {
+  buffer_pointer++;
+  buffer_pointer = buffer_pointer % buffersize;
+  buffer[buffer_pointer] = value;
+}
+
+int get_buffer(int relative_pos) {
+  return buffer[(buffer_pointer + relative_pos + buffersize) % buffersize];
 }
 
 void get_sensor_data() {  
@@ -37,10 +64,3 @@ void get_sensor_data() {
     GyZ=Wire.read()<<8|Wire.read();  // 0x47 (GYRO_ZOUT_H) & 0x48 (GYRO_ZOUT_L)
     delay(10);
 }
-
-void sendInt(int value) {
-  Serial.write(lowByte(value));
-  Serial.write(highByte(value));
-  Serial.println("");
-}
-
