@@ -20,7 +20,6 @@ void loop() {
   value = sqrt(pow(AcX, 2) + pow(AcY, 2) + pow(AcZ, 2));
   //value = value/acc_scale;
   sendInt(value);
-
 }
 
 void get_sensor_data() {  
