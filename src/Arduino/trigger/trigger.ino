@@ -7,7 +7,7 @@ int buffersize = 64;
 int buffer[64];
 int buffer_pointer;
 bool booted = false;
-float sensetivity = 6;
+float sensitivity = 6;
 
 void setup() {
    Serial.begin(9600);
@@ -30,10 +30,9 @@ void loop() {
     avg += abs(get_buffer(-count - 1) - get_buffer(-count))/buffersize;
   }
   int diff = abs(get_buffer(-1) - get_buffer(0));
-  if(diff > avg * sensetivity) {
-    Serial.println("Triggered!!!!");
+  if(diff > avg * sensitivity) {
+    sendMIDI(0);
   }
-  //Serial.println(float(avg)/acc_scale);
 }
 
 void buffer_sensor() {
@@ -64,3 +63,8 @@ void get_sensor_data() {
     GyZ=Wire.read()<<8|Wire.read();  // 0x47 (GYRO_ZOUT_H) & 0x48 (GYRO_ZOUT_L)
     delay(10);
 }
+
+void sendMIDI(int mode) {
+  Serial.println("Triggered!");
+}
+
