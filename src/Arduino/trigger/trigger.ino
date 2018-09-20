@@ -6,8 +6,9 @@ int acc_scale = 16384;
 int buffersize = 64;
 int buffer[64];
 int buffer_pointer;
-bool booted = false;
-float sensitivity = 6;
+int last_trigger = 0;
+bool triggerlock = false;
+float sensitivity = 15;
 
 void setup() {
    Serial.begin(9600);
@@ -16,22 +17,20 @@ void setup() {
    Wire.write(0x6B);  // PWR_MGMT_1 register
    Wire.write(0);     // set to zero (wakes up the MPU-6050)
    Wire.endTransmission(true);
-   for(int count = 0; count < buffersize; count++) {
-      get_sensor_data();
-      buffer_sensor();
-   }
 }
 
 void loop() {
   get_sensor_data();
   buffer_sensor();
+  reset_triggerlock();
   int avg = 0;
   for(int count = 1; count < buffersize; count++) {
-    avg += abs(get_buffer(-count - 1) - get_buffer(-count))/buffersize;
+    avg += abs(get_buffer(-count - 1) - get_buffer(-count))/(buffersize - 1);
   }
   int diff = abs(get_buffer(-1) - get_buffer(0));
-  if(diff > avg * sensitivity) {
+  if(diff  > avg * sensitivity && triggerlock) {
     sendMIDI(0);
+    set_triggerlock();
   }
 }
 
@@ -47,6 +46,18 @@ void buffering(int value) {
 
 int get_buffer(int relative_pos) {
   return buffer[(buffer_pointer + relative_pos + buffersize) % buffersize];
+}
+
+bool reset_triggerlock() {
+   int reset_point = (buffersize + last_trigger - 1) % buffersize;
+   if(buffer_pointer == reset_point) {
+     triggerlock = true;
+   }
+}
+
+bool set_triggerlock() {
+    triggerlock = false;
+    last_trigger = buffer_pointer;
 }
 
 void get_sensor_data() {  
@@ -66,5 +77,11 @@ void get_sensor_data() {
 
 void sendMIDI(int mode) {
   Serial.println("Triggered!");
+}
+
+void sendInt(int value) {
+  Serial.write(lowByte(value));
+  Serial.write(highByte(value));
+  Serial.println("");
 }
 
